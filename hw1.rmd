@@ -15,7 +15,7 @@ Read in Dataset...
 library(ggplot2)
 library(tidyr)
 
-setwd("l:/school/cuny/621/hw1")
+#setwd("l:/school/cuny/621/hw1")
 mbTrain <- read.csv("moneyball-training-data.csv")
 ```
 
@@ -114,8 +114,8 @@ attach(mbTrain)
 ggplot(mbTrain, aes(y=TEAM_BATTING_H, x= 1)) + geom_boxplot()
 boxplot(TARGET_WINS)
 #note appears reasonably normally distributed
-ggplot() + geom_histogram(aes(x = TARGET_WINS))
-ggplot() + geom_histogram(aes(x = TEAM_BATTING_H))
+# ggplot() + geom_histogram(aes(x = TARGET_WINS))
+# ggplot() + geom_histogram(aes(x = TEAM_BATTING_H))
 
 
 ggplot(gather(mbTrain), aes(value)) +
@@ -124,12 +124,40 @@ ggplot(gather(mbTrain), aes(value)) +
 
 ```
 
+Add Scatter Plots
+```{r fig.width=12, fig.height=12}
+ggplot(gather(mbTrain, "KEY", "VALUE", 2:length(names(mbTrain))), aes(y= TARGET_WINS, x= VALUE)) +
+    geom_point() +
+    facet_wrap(~KEY, scales = "free_x")
+
+# ggplot(mbTrain, aes(x= TEAM_BATTING_H, y = TARGET_WINS)) + 
+#     geom_point()
+
+# ggplot(data = mbTrain, mapping = aes(x = TARGET_WINS, y = n)) +
+#     geom_point() + 
+#     facet_wrap(facets = vars())
+
+```
+
+Divide data into test and training.  80% for training, 20% for test.
+
+```{r}
+set.seed(42)
+sample <- sample.int(n=nrow(mbTrain), size = floor(.80*nrow(mbTrain)),replace=F)
+train <- mbTrain[sample,]
+test <- mbTrain[-sample,]
+
+```
+
+
 Fit a couple really simple models just to explore, one with everything, one with just home runs against wins.
 
 ```{r}
-lmFit <- lm(TARGET_WINS ~., data = mbTrain)
+attach(train)
+
+lmFit <- lm(TARGET_WINS ~., data = train)
 summary(lmFit)
-lmFit <- lm(TARGET_WINS ~ TEAM_BATTING_HR, data = mbTrain)
+lmFit <- lm(TARGET_WINS ~ TEAM_BATTING_HR, data = train)
 
 summary(lmFit)
 ```
@@ -138,7 +166,7 @@ Let's plot hits against wins as that field should highest correlation.
 
 ```{r}
 lmFitH <- lm(TARGET_WINS ~ TEAM_BATTING_H)
-ggplot(mbTrain, aes(x= TEAM_BATTING_H, y = TARGET_WINS)) + 
+ggplot(train, aes(x= TEAM_BATTING_H, y = TARGET_WINS)) + 
     geom_point() + 
     geom_smooth(method = "lm", se= FALSE)
 ```
@@ -146,7 +174,7 @@ Plot Residuals
 
 ```{r}
 #vs index
-ggplot(lmFitH, aes(x= seq(1:nrow(mbTrain)), y= .resid)) +geom_point()
+ggplot(lmFitH, aes(x= seq(1:nrow(train)), y= .resid)) +geom_point()
 #vs fitted value
 ggplot(lmFitH, aes(x= .fitted, y= .resid)) +geom_point()
 ```
