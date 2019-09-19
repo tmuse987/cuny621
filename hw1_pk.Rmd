@@ -157,12 +157,62 @@ Again looking at the maximum we find it is unreasonably high at `r max`, which a
 
 ###2. DATA PREPARATION
 
-First task under data preparation will be to eliminate all missing data. In the Data Exploration section we found one variable, `r maxnaname`, so we commence by eliminating this variable. 
+First task under data preparation will be to eliminate all missing data. In the Data Exploration section we found one variable, `r maxnaname` with an exceptionaly high percentage of missing data, so we commence by eliminating this variable.
 
 ```{r echo=FALSE}
 mbTrain <- mbTrain[, -which(names(mbTrain) %in% c(maxnaname))]
 ```
 
+Next task is to handle missing data in the other variables. Here, becouse the percentages of missing data are lower, we can replace missing data with the median. We prefer replacing with median instead of mean because the latter is more sensitive to outliers. So we get a clean dataset without missing values.
+
+```{r echo=FALSE}
+mbTrain$TEAM_BASERUN_CS[is.na(mbTrain$TEAM_BASERUN_CS)] <- median(mbTrain$TEAM_BASERUN_CS, na.rm=TRUE)
+mbTrain$TEAM_BATTING_SO[is.na(mbTrain$TEAM_BATTING_SO)] <- median(mbTrain$TEAM_BATTING_SO, na.rm=TRUE)
+mbTrain$TEAM_BASERUN_SB[is.na(mbTrain$TEAM_BASERUN_SB)] <- median(mbTrain$TEAM_BASERUN_SB, na.rm=TRUE)
+mbTrain$TEAM_PITCHING_SO[is.na(mbTrain$TEAM_PITCHING_SO)] <- median(mbTrain$TEAM_PITCHING_SO, na.rm=TRUE)
+
+sapply(mbTrain, function(x) round(sum(is.na(x))/nrow(mbTrain)*100,1))
+```
+
+In the explratory phase we also identified several variables with outliers. Outliers will be substituted with median. Again we choose median becouse it is less influenced by these outliers. What cutoff to use to tag an outlier reading could be a 3 standard deviation from the mean, or 1.5 time the inter quartile range, but in this case becouse these variables have reciprocals as seen in the exploratory phase, we will use the maximum reading of those variables.
+
+**TEAM_PITCHING_H**
+
+```{r echo=FALSE}
+mbTrain$TEAM_PITCHING_H[mbTrain$TEAM_PITCHING_H>max(mbTrain$TEAM_BATTING_H)] <- median(mbTrain$TEAM_PITCHING_H, na.rm=TRUE)
+
+plot(mbTrain$TEAM_PITCHING_H)
+boxplot(mbTrain$TEAM_PITCHING_H)
+summary(mbTrain$TEAM_PITCHING_H)
+max<-summary(mbTrain$TEAM_PITCHING_H)[6]
+median<-round(summary(mbTrain$TEAM_PITCHING_H)[3],1)
+spread<-round(as.numeric(summary(mbTrain$TEAM_PITCHING_H)[4]-summary(mbTrain$TEAM_PITCHING_H)[3]),0)
+```
+
+From the summary we now see that the maximum is `r max`, which is a much more reasonable number. We can also see a wide spread between mean and median of `r spread`, indicating a more normal distribution than before.
+
+**TEAM_PITCHING_SO**
+
+```{r echo=FALSE}
+mbTrain$TEAM_PITCHING_SO[mbTrain$TEAM_PITCHING_SO>max(mbTrain$TEAM_BATTING_SO)] <- median(mbTrain$TEAM_PITCHING_SO, na.rm=TRUE)
+
+plot(mbTrain$TEAM_PITCHING_SO)
+boxplot(mbTrain$TEAM_PITCHING_SO)
+summary(mbTrain$TEAM_PITCHING_SO)
+max<-summary(mbTrain$TEAM_PITCHING_SO)[6]
+median<-round(summary(mbTrain$TEAM_PITCHING_SO)[3],1)
+spread<-round(as.numeric(summary(mbTrain$TEAM_PITCHING_SO)[4]-summary(mbTrain$TEAM_PITCHING_SO)[3]),0)
+```
+
+From the summary we now see that the maximum is `r max`, which is a much more reasonable number. We can also see a wide spread between mean and median of `r spread`, indicating a more normal distribution than before.
+
+```{r echo=FALSE,message=FALSE}
+attach(mbTrain)
+ggplot(gather(mbTrain), aes(value)) +
+    geom_histogram(bins = 20) +
+    facet_wrap(~key, scales = "free_x")
+
+```
 
 ###3. BUILD MODELS
 
